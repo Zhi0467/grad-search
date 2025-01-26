@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Chat Interface</title>
+    <style>
+        /* Center everything on the page */
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh; /* Full viewport height */
+            margin: 0;
+            background-color: #f4f4f9;
+        }
+
+        /* Style the search bar container */
+        #searchBar {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        /* Style the search input and button */
+        #searchInput {
+            width: 40%; /* Wider search input */
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px 0 0 5px;
+        }
+
+        #searchButton {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 0 5px 5px 0;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #searchButton:hover {
+            background-color: #0056b3; /* Darker shade on hover */
+        }
+
+        /* Style the chat container */
+        #chat {
+            width: 60%; /* Wider chat box */
+            height: 400px; /* Taller chat box */
+            border: 1px solid #ccc;
+            padding: 20px;
+            overflow-y: scroll;
+            margin-bottom: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Style the message input and send button container */
+        #messageContainer {
+            display: flex;
+            justify-content: center;
+            width: 60%;
+            gap: 10px; /* Space between input and button */
+        }
+
+        /* Style the message input */
+        #userInput {
+            width: 100%; /* Full width of the container */
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        /* Style the send button */
+        #sendButton {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #sendButton:hover {
+            background-color: #0056b3; /* Darker shade on hover */
+        }
+
+        /* Style the New Chat button */
+        #newChatButton {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #28a745; /* Green color */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-right: auto; /* Push the button to the left */
+            margin-bottom: 10px; /* Add some spacing below the button */
+        }
+
+        #newChatButton:hover {
+            background-color: #218838; /* Darker green on hover */
+        }
+
+        /* Style the chat messages */
+        .user-message {
+            background-color: #e3f2fd; /* Light blue background for user messages */
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            width: fit-content;
+            max-width: 80%;
+            align-self: flex-end; /* Align user messages to the right */
+        }
+
+        .bot-message {
+            background-color: #f1f1f1; /* Light gray background for bot messages */
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            width: fit-content;
+            max-width: 80%;
+            align-self: flex-start; /* Align bot messages to the left */
+        }
+
+        /* Style the chat container for flex layout */
+        #chat {
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+</head>
+<body>
+    <h1>Grad Search</h1>
+
+    <!-- New Chat button container -->
+    <div id="newChatContainer">
+        <button id="newChatButton" onclick="startNewChat()">New Chat</button>
+    </div>
+
+    <!-- Search bar at the top -->
+    <div id="searchBar">
+        <input type="text" id="searchInput" placeholder="Search...">
+        <button id="searchButton">Search</button>
+    </div>
+
+    <!-- Chat interface -->
+    <div id="chat"></div>
+
+    <!-- Message input and send button -->
+    <div id="messageContainer">
+        <input type="text" id="userInput" placeholder="Type your message...">
+        <button id="sendButton" onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        // Function to display a welcome message from the bot
+        function showWelcomeMessage() {
+            const chat = document.getElementById("chat");
+            const welcomeMessage = "Welcome! I am here to help you figure out what you want exactly. Chat with me, and when you are ready, go to the search bar!";
+            chat.innerHTML += `<div class="bot-message">${welcomeMessage}</div>`;
+            saveChatHistory("bot", welcomeMessage); // Save welcome message to history
+            chat.scrollTop = chat.scrollHeight; // Auto-scroll to the bottom
+        }
+
+        // Load chat history from localStorage when the page loads
+        function loadChatHistory() {
+            const chatHistory = JSON.parse(localStorage.getItem("chatHistory")) || [];
+            const chat = document.getElementById("chat");
+
+            if (chatHistory.length === 0) {
+                // Show welcome message if there's no chat history
+                showWelcomeMessage();
+            } else {
+                // Load existing chat history
+                chatHistory.forEach((entry) => {
+                    if (entry.type === "user") {
+                        chat.innerHTML += `<div class="user-message"><strong>You:</strong> ${entry.message}</div>`;
+                    } else if (entry.type === "bot") {
+                        chat.innerHTML += `<div class="bot-message"><strong>Bot:</strong><br>${entry.message}</div>`;
+                    }
+                });
+
+                // Auto-scroll to the bottom of the chat
+                chat.scrollTop = chat.scrollHeight;
+            }
+        }
+
+        // Save chat history to localStorage
+        function saveChatHistory(type, message) {
+            const chatHistory = JSON.parse(localStorage.getItem("chatHistory")) || [];
+            chatHistory.push({ type, message });
+            localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
+        }
+
+        // Clear chat history and reset the chat interface
+        function startNewChat() {
+            // Clear the chat history in localStorage
+            localStorage.removeItem("chatHistory");
+
+            // Clear the chat interface
+            const chat = document.getElementById("chat");
+            chat.innerHTML = "";
+
+            // Show the welcome message
+            showWelcomeMessage();
+        }
+
+        // Function to send a message to the server and handle the response
+        async function sendMessageToServer(message) {
+            try {
+                const response = await fetch("/chat", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ keyword: message }),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                return data; // Return the bot's response
+            } catch (error) {
+                console.error("Error:", error);
+                throw error; // Re-throw the error for handling in the calling function
+            }
+        }
+        // Function to handle sending a message from the UI
+        async function sendMessage() {
+            const userInput = document.getElementById("userInput").value;
+            if (!userInput) return;
+
+            const chat = document.getElementById("chat");
+
+            // Add the user's message to the chat (without "You" label)
+            chat.innerHTML += `<div class="user-message">${userInput}</div>`;
+            saveChatHistory("user", userInput); // Save user message to history
+
+            try {
+                // Send the message to the server and get the bot's response
+                const botResponse = await sendMessageToServer(userInput);
+
+                // Extract the "response" field from the JSON object
+                const responseText = botResponse.response;
+
+                // Replace newlines with <br> for HTML display
+                const formattedResponse = responseText.replace(/\n/g, "<br>");
+
+                // Add the bot's response to the chat (without "Bot" label)
+                chat.innerHTML += `<div class="bot-message">${formattedResponse}</div>`;
+                saveChatHistory("bot", formattedResponse); // Save bot response to history
+            } catch (error) {
+                // Handle errors (e.g., display an error message in the chat)
+                chat.innerHTML += `<div class="bot-message" style="color: red;">Failed to get a response from the server.</div>`;
+            }
+
+            // Clear the input field
+            document.getElementById("userInput").value = "";
+
+            // Auto-scroll to the bottom of the chat
+            chat.scrollTop = chat.scrollHeight;
+        }
+        
+
+        // Load chat history when the page loads
+        window.onload = loadChatHistory;
+
+        // Allow pressing Enter to send a message
+        document.getElementById("userInput").addEventListener("keypress", function (event) {
+            if (event.key === "Enter") {
+                sendMessage();
+            }
+        });
+
+        // Add event listener for the search button (to be implemented later)
+        document.getElementById("searchButton").addEventListener("click", function () {
+            const searchQuery = document.getElementById("searchInput").value;
+            alert(`Search functionality will be implemented later. Query: ${searchQuery}`);
+        });
+    </script>
+</body>
+</html>
